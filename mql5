@@ -1,0 +1,69 @@
+
+// EA Red Dragon MT5
+// Developer: Forex Robot Easy Team
+// Website: forexroboteasy.com
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <Trade\PositionInfo.mqh>
+#include <Trade\OrderInfo.mqh>
+#include <Technical\Indicators\Indicators.mqh>
+
+// Define constants
+#define TAKE_PROFIT 100
+#define STOP_LOSS 50
+
+// Initialize trade module
+CTrade trade;
+
+// Initialize indicators
+CCI cci;
+
+// Initialize variables
+double cciValue;
+bool isBuySignal;
+bool isSellSignal;
+
+// Initialize the expert advisor
+void OnTick()
+{
+   // Calculate CCI value
+   cciValue = iCCI(NULL, 0, 14, PRICE_CLOSE, 0);
+   
+   // Check for buy signal
+   if (cciValue > 100)
+      isBuySignal = true;
+   
+   // Check for sell signal
+   if (cciValue < -100)
+      isSellSignal = true;
+   
+   // Check if a buy trade should be opened
+   if (isBuySignal && !trade.PositionSelect(_Symbol))
+   {
+      trade.Buy(_Symbol, 0.1, _Ask, STOP_LOSS, TAKE_PROFIT, 'Buy trade');
+   }
+   
+   // Check if a sell trade should be opened
+   if (isSellSignal && !trade.PositionSelect(_Symbol))
+   {
+      trade.Sell(_Symbol, 0.1, _Bid, STOP_LOSS, TAKE_PROFIT, 'Sell trade');
+   }
+   
+   // Check if any open trades should be closed
+   if (trade.PositionSelect(_Symbol))
+   {
+      CPositionInfo position;
+      trade.PositionGet(position);
+      
+      if (position.PositionType() == POSITION_TYPE_BUY && cciValue < 0)
+      {
+         trade.PositionClose(position.Ticket());
+      }
+      
+      if (position.PositionType() == POSITION_TYPE_SELL && cciValue > 0)
+      {
+         trade.PositionClose(position.Ticket());
+      }
+   }
+}
